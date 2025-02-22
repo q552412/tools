@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CSS转JSON格式</title>
+</head>
+<body>
+  <style>
+    .container {
+      display: flex;
+      gap: 20px;
+      padding: 20px;
+    }
+    .input, .output {
+      width: 400px;
+      min-height: 300px;
+      border: 1px solid #ccc;
+      padding: 10px;
+      white-space: pre-wrap;/* 保留换行和空格 */
+      font-family: monospace; /* 使用等宽字体 */
+      -webkit-user-modify: read-write-plaintext-only;/* 禁止复制(进来的)样式 */
+      -webkit-user-select: text;/* 允许选择文本 */
+      user-modify: read-write-plaintext-only;
+      overflow: auto;
+    }
+    .output {
+      background: #f5f5f5;
+    }
+    button {
+      margin: 10px;
+      padding: 5px 15px;
+      cursor: pointer;
+    }
+    /* toast样式 */
+    .toast {
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.7);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 4px;
+        display: none;
+        animation: fadeIn 0.3s, fadeOut 0.3s 1.7s;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    @keyframes fadeOut {
+        from { opacity: 1; }
+        to { opacity: 0; }
+    }
+  </style>
+
+  <div class="container">
+    <div>
+      <div class="input" contenteditable></div>
+      <div style="display: flex;flex-direction: column;gap: 3px;align-items: flex-start;">
+        <button onclick="pasteFromClipboard()">粘贴</button>
+        <button onclick="convertToJSON()">转换</button>
+        <button onclick="clearInput()" style="background: red; color: white;border: none;">清空</button>
+      </div>
+    </div>
+    <div>
+      <div class="output" id="output"></div>
+      <button onclick="copyToClipboard()">复制</button>
+    </div>
+  </div>
+
+  <div id="toast" class="toast">已复制到剪贴板</div>
+
+  <script>
+    function convertToJSON() {
+      const input = document.querySelector('.input').innerText;
+      const lines = input.split('\n')
+        .map(line => line.trim())
+        .filter(line => line && line.includes(':'));  // 只处理非空且包含冒号的行
+      
+      const result = lines.map((line, index) => {
+        const [property, value] = line.split(':').map(item => item.trim());
+        const cleanValue = value.replace(';', '');
+        const comma = index === lines.length - 1 ? '' : ',';
+        return `"${property}": "${cleanValue}"${comma}`;
+      });
+
+      document.getElementById('output').innerText = result.join('\n');
+    }
+
+    function clearInput() {
+      document.querySelector('.input').innerText = '';
+      document.getElementById('output').innerText = '';
+    }
+
+    function copyToClipboard() {
+      const output = document.getElementById('output');
+      const text = output.innerText;
+      navigator.clipboard.writeText(text);
+      // alert('已复制到剪贴板！'); 
+      // 显示toast提示
+      const toast = document.getElementById('toast');
+      toast.style.display = 'block';
+            
+          // 2秒后隐藏
+      setTimeout(() => {
+          toast.style.display = 'none';
+      }, 2000);
+    }
+
+    async function pasteFromClipboard() {
+      try {
+        document.querySelector('.input').innerText = "";
+        const text = await navigator.clipboard.readText();
+        document.querySelector('.input').innerText = text;
+        convertToJSON();
+        copyToClipboard();
+      } catch (err) {
+        console.error('粘贴失败:', err);
+        alert('粘贴失败，请手动粘贴');
+      }
+    }
+  </script>
+</body>
+</html>
