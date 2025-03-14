@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>URL转换下载工具</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.0/FileSaver.min.js"></script>
+    <style>
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        textarea {
+            width: 100%;
+            height: 300px;
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ccc;
+        }
+        button {
+            padding: 10px 20px;
+            background: #2196F3;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .preview {
+            margin: 20px 0;
+            padding: 10px;
+            background: #f5f5f5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>图片URL处理器</h2>
+        
+        <textarea id="urlInput" placeholder="请粘贴图片URL列表（每行一个）..."></textarea>
+        
+        <div>
+            <button onclick="convertToJson()">转换为JSON</button>
+            <button onclick="downloadImages()" style="background: #4CAF50;">打包下载图片</button>
+        </div>
+
+        <div class="preview">
+            <h4>JSON预览：</h4>
+            <pre id="jsonPreview"></pre>
+        </div>
+
+        <div id="downloadStatus"></div>
+    </div>
+
+    <script>
+        let imageUrls = [];
+
+        // 转换URL为JSON
+        function convertToJson() {
+            const input = document.getElementById('urlInput').value;
+            imageUrls = input.split('\n')
+                .map(line => line.trim())
+                .filter(line => line.length > 0);
+
+            const preview = document.getElementById('jsonPreview');
+            preview.innerHTML = JSON.stringify(imageUrls, null, 2);
+        }
+
+        // 下载图片
+        async function downloadImages() {
+            if(imageUrls.length === 0) {
+                alert("请先输入URL列表并转换为JSON");
+                return;
+            }
+
+            const zip = new JSZip();
+            const folder = zip.folder("images");
+            const statusDiv = document.getElementById('downloadStatus');
+            const results = new Array(imageUrls.length);
+            let successCount = 0;
+
+            statusDiv.innerHTML = `<div style="color:blue;">开始下载 ${imageUrls.length} 个文件...</div>`;
+
+            try {
+                // 按顺序下载
+                for(let i = 0; i < imageUrls.length; i++) {
+                    const url = imageUrls[i];
+                    try {
+                        statusDiv.innerHTML = `正在下载 ${i+1}/${imageUrls.length} (${((i+1)/imageUrls.length*100).toFixed(1)}%)...`;
+                        
+                        const response = await fetch(url);
+                        if(!response.ok) throw new Error(`HTTP ${response.status}`);
+                        
+                        const blob = await response.blob();
+                        const filename = `${String(i+1).padStart(4, '0')}_${url.split('/').pop().split('?')[0]}`;
+                        
+                        folder.file(filename, blob);
+                        results[i] = true;
+                        successCount++;
+                    } catch (error) {
+                        console.error(`[${i+1}] 下载失败: ${url}`, error);
+                        results[i] = false;
+                    }
+                }
+
+                // 生成压缩包
+                const content = await zip.generateAsync({ type: "blob" });
+                saveAs(content, "images.zip");
+                
+                // 显示结果
+                const failedCount = imageUrls.length - successCount;
+                statusDiv.innerHTML = `
+                    <div style="color: green;">
+                        下载完成！<br>
+                        成功：${successCount} 个<br>
+                        失败：${failedCount} 个
+                    </div>
+                `;
+            } catch (error) {
+                statusDiv.innerHTML = `<div style="color: red;">打包失败: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>

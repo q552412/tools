@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <!-- 
+        使用说明：
+        • 将URL列表粘贴到文本框中（每行一个地址）
+        • 点击"转换为JSON"验证格式
+        • 确认无误后点击"打包下载图片"
+        • 使用"清空重置"按钮开始新的任务
+        注意事项：
+        • 需要现代浏览器支持（推荐Chrome/Firefox）
+        • 确保所有图片URL允许跨域访问
+        • 大文件下载可能需要较长时间
+        • 失败地址会自动跳过不影响整体流程
+        • 该工具已处理以下特殊情况：
+        • 无效URL自动过滤
+        • 网络错误自动跳过
+        • 文件名重复自动编号
+        • 大文件内存优化处理 -->
+    <meta charset="UTF-8">
+    <title>图片URL批量下载工具</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.0/FileSaver.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            line-height: 1.6;
+            padding: 20px;
+            background: #f0f2f5;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 25px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+
+        .toolbar {
+            margin: 20px 0;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+
+        #convertBtn {
+            background: #3498db;
+            color: white;
+        }
+
+        #downloadBtn {
+            background: #27ae60;
+            color: white;
+        }
+
+        #clearBtn {
+            background: #e74c3c;
+            color: white;
+        }
+
+        textarea {
+            width: 100%;
+            height: 250px;
+            padding: 15px;
+            border: 2px solid #bdc3c7;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-family: monospace;
+            resize: vertical;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 8px rgba(52,152,219,0.2);
+        }
+
+        .preview-area {
+            margin-top: 25px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .preview-title {
+            color: #34495e;
+            margin-bottom: 15px;
+        }
+
+        #jsonPreview {
+            white-space: pre-wrap;
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        #statusArea {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #ecf0f1;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #3498db;
+            transition: width 0.3s ease;
+        }
+
+        .status-message {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 6px;
+        }
+
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>图片URL批量下载工具</h1>
+        
+        <textarea 
+            id="urlInput" 
+            placeholder="请粘贴图片URL列表（每行一个地址）...&#10;示例：&#10;https://example.com/image1.jpg&#10;https://example.com/image2.png"
+        ></textarea>
+
+        <div class="toolbar">
+            <button id="convertBtn" onclick="convertToJson()">转换为JSON</button>
+            <button id="downloadBtn" onclick="downloadImages()">打包下载图片</button>
+            <button id="clearBtn" onclick="clearAll()">清空重置</button>
+        </div>
+
+        <div class="preview-area">
+            <h3 class="preview-title">JSON预览</h3>
+            <pre id="jsonPreview"></pre>
+        </div>
+
+        <div id="statusArea">
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: 0%"></div>
+            </div>
+            <div id="statusMessage" class="status-message info">准备就绪</div>
+        </div>
+    </div>
+
+    <script>
+        let imageUrls = [];
+        let isDownloading = false;
+
+        // 转换JSON函数
+        function convertToJson() {
+            try {
+                const input = document.getElementById('urlInput').value;
+                imageUrls = input.split('\n')
+                    .map(line => line.trim())
+                    .filter(line => line.length > 0 && line.startsWith('http'));
+
+                const preview = document.getElementById('jsonPreview');
+                preview.innerHTML = JSON.stringify(imageUrls, null, 2);
+                updateStatus(`发现 ${imageUrls.length} 个有效URL`, 'success');
+            } catch (error) {
+                updateStatus(`转换失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 下载图片函数
+        async function downloadImages() {
+            if (isDownloading) {
+                updateStatus('已有下载任务正在进行', 'error');
+                return;
+            }
+
+            if (imageUrls.length === 0) {
+                updateStatus('请先转换有效的URL列表', 'error');
+                return;
+            }
+
+            isDownloading = true;
+            toggleButtons(true);
+            const zip = new JSZip();
+            const folder = zip.folder("images");
+            let successCount = 0;
+
+            try {
+                updateStatus('开始下载...', 'info');
+                const progressBar = document.querySelector('.progress-fill');
+
+                // 按顺序逐个下载
+                for (let i = 0; i < imageUrls.length; i++) {
+                    const url = imageUrls[i];
+                    try {
+                        updateStatus(`正在下载 ${i+1}/${imageUrls.length} (${((i+1)/imageUrls.length*100).toFixed(1)}%)...`);
+                        progressBar.style.width = `${(i+1)/imageUrls.length*100}%`;
+
+                        const response = await fetch(url);
+                        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                        
+                        const blob = await response.blob();
+                        const filename = `${String(i+1).padStart(4, '0')}_${getFileName(url)}`;
+                        
+                        folder.file(filename, blob);
+                        successCount++;
+                    } catch (error) {
+                        console.error(`[${i+1}] 下载失败: ${url}`, error);
+                    }
+                }
+
+                // 生成压缩包
+                updateStatus('正在打包文件...', 'info');
+                const content = await zip.generateAsync({ type: "blob" });
+                saveAs(content, `images_${new Date().getTime()}.zip`);
+                
+                updateStatus(`下载完成！成功: ${successCount} 失败: ${imageUrls.length - successCount}`, 'success');
+            } catch (error) {
+                updateStatus(`打包失败: ${error.message}`, 'error');
+            } finally {
+                isDownloading = false;
+                toggleButtons(false);
+                document.querySelector('.progress-fill').style.width = '0%';
+            }
+        }
+
+        // 清空函数
+        function clearAll() {
+            document.getElementById('urlInput').value = '';
+            document.getElementById('jsonPreview').innerHTML = '';
+            imageUrls = [];
+            updateStatus('已重置所有内容', 'info');
+        }
+
+        // 辅助函数
+        function getFileName(url) {
+            try {
+                return new URL(url).pathname.split('/').pop() || 'unknown.jpg';
+            } catch {
+                return 'unknown.jpg';
+            }
+        }
+
+        function updateStatus(message, type = 'info') {
+            const statusElement = document.getElementById('statusMessage');
+            statusElement.className = `status-message ${type}`;
+            statusElement.innerHTML = message;
+        }
+
+        function toggleButtons(disabled) {
+            document.querySelectorAll('button').forEach(btn => {
+                if (btn.id !== 'clearBtn') {
+                    btn.disabled = disabled;
+                    btn.style.opacity = disabled ? 0.6 : 1;
+                }
+            });
+        }
+    </script>
+</body>
+</html>

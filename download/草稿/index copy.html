@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>顺序保持图片下载工具</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.0/FileSaver.min.js"></script>
+</head>
+<body>
+    <button onclick="downloadAll()" style="padding: 15px 30px; font-size: 18px;">
+        顺序打包下载（44张）
+    </button>
+    <div id="progress" style="margin-top: 20px;"></div>
+
+    <script>
+        const imageUrls = [
+            "https://gs-jj-us-static.oss-accelerate.aliyuncs.com/tmp/photo/20210817/products/25/cute-turtle-custom-pins.jpg",
+            "https://gs-jj-us-static.oss-accelerate.aliyuncs.com/u_file/1905/products/29/rapper-enamel-lapel-pins.jpg",
+            "https://gs-jj-us-static.oss-accelerate.aliyuncs.com/u_file/1905/products/22/custom-cartoon-pins.jpg",
+            "https://gs-jj-us-static.oss-accelerate.aliyuncs.com/tmp/photo/20211008/products/25/sweetheart-girl-custom-pins.jpg",
+            "https://gs-jj-us-static.oss-accelerate.aliyuncs.com/tmp/photo/20210928/products/25/10-years-of-sevice-sandblast-pins.jpg",
+            "https://gs-jj-us-static.oss-accelerate.aliyuncs.com/tmp/photo/20241110/products/97/dragon-soft-enamel-pins.jpg",
+            "https://gs-jj-us-static.oss-accelerate.aliyuncs.com/tmp/photo/20241108/products/97/soft-enamel-for-joker-pins.jpg",
+            "https://gs-jj-us-static.oss-accelerate.aliyuncs.com/tmp/photo/20241108/products/97/rose-flower-lapel-badge.jpg",
+            "https://gs-jj-us-static.oss-accelerate.aliyuncs.com/tmp/photo/20240807/products/97/3.jpg",
+            "https://gs-jj-us-static.oss-accelerate.aliyuncs.com/tmp/photo/20210927/products/25/abstract-painting-soft-enamel-pins.jpg",
+            "https://gs-jj-us-static.oss-accelerate.aliyuncs.com/u_file/1904/products/29/junior-prom-custom-pins.jpg",
+            "https://gs-jj-us-static.oss-accelerate.aliyuncs.com/u_file/1810/products/22/63798617bd.jpg",
+            "https://gs-jj-us-static.oss-accelerate.aliyuncs.com/tmp/photo/20210923/products/25/royal-order-of-jesters-3d-custom-pins-1.jpg",
+            "https://gs-jj-us-static.oss-accelerate.aliyuncs.com/tmp/photo/20210927/products/38/commemorative-custom-pins.jpg",
+            "https://gs-jj-us-static.oss-accelerate.aliyuncs.com/tmp/photo/20241111/products/97/super-junior-soft-enamel-pins.jpg",
+            "https://gs-jj-us-static.oss-accelerate.aliyuncs.com/tmp/photo/20241111/products/97/star-hard-enamel-pins-with-spinner.jpg",
+            "https://gs-jj-us-static.oss-accelerate.aliyuncs.com/tmp/photo/20241111/products/97/skateboard-flip-soft-enamel-pins.jpg",
+            "https://gs-jj-us-static.oss-accelerate.aliyuncs.com/tmp/photo/20241111/products/97/roll-for-love-soft-enamel-pins.jpg",
+            "https://gs-jj-us-static.oss-accelerate.aliyuncs.com/tmp/photo/20241111/products/97/prediquemos-soft-enamel-pins.jpg",
+            "https://gs-jj-us-static.oss-accelerate.aliyuncs.com/tmp/photo/20241110/products/97/merry-christmas-pendant-enamel-pins.jpg",
+            "https://gs-jj-us-static.oss-accelerate.aliyuncs.com/tmp/photo/20241110/products/97/mask-glitter-soft-enamel-pins.jpg",
+            "https://gs-jj-us-static.oss-accelerate.aliyuncs.com/tmp/photo/20241110/products/97/frederick-soft-enamel-pins.jpg",
+            "https://gs-jj-us-static.oss-accelerate.aliyuncs.com/tmp/photo/20241108/products/97/soft-enamel-for-fresno-rainbow-fride.jpg",
+            "https://gs-jj-us-static.oss-accelerate.aliyuncs.com/u_file/1905/products/31/custom-parrot-club-pins.jpg",
+            "https://gs-jj-us-static.oss-accelerate.aliyuncs.com/u_file/1905/products/20/custom-leaves-pins.jpg",
+            "https://gs-jj-us-static.oss-accelerate.aliyuncs.com/tmp/photo/20210926/products/38/wsp-custom-lapel-pins.jpg",
+            "https://gs-jj-us-static.oss-accelerate.aliyuncs.com/tmp/photo/20210926/products/38/man-portrait-custom-pins.jpg",
+            "https://gs-jj-us-static.oss-accelerate.aliyuncs.com/tmp/photo/20210927/products/25/nicole-haught-custom-soft-enamel-pins.jpg",
+            "https://gs-jj-us-static.oss-accelerate.aliyuncs.com/u_file/1810/products/22/8dc2b6eba9.jpg",
+            "https://gs-jj-us-static.oss-accelerate.aliyuncs.com/u_file/1809/products/19/fc99de2786.jpg",
+            "https://gs-jj-us-static.oss-accelerate.aliyuncs.com/u_file/1805/products/15/e0bb5e8877.jpg",
+            "https://gs-jj-us-static.oss-accelerate.aliyuncs.com/u_file/1805/products/14/6066304af7.jpg",
+            "https://gs-jj-us-static.oss-accelerate.aliyuncs.com/tmp/photo/20210927/products/38/american-veterans-custom-lapel-pins.jpg",
+            "https://gs-jj-us-static.oss-accelerate.aliyuncs.com/tmp/photo/20210926/products/38/mysterious-custom-pins.jpg",
+            "https://gs-jj-us-static.oss-accelerate.aliyuncs.com/tmp/photo/20210926/products/38/special-flowers-custom-pins.jpg",
+            "https://gs-jj-us-static.oss-accelerate.aliyuncs.com/tmp/photo/20241110/products/97/round-medal-shaped-colorful-metal-pins.jpg",
+            "https://gs-jj-us-static.oss-accelerate.aliyuncs.com/u_file/1904/products/10/festival-custom-pins.jpg",
+            "https://gs-jj-us-static.oss-accelerate.aliyuncs.com/u_file/1811/products/06/92dd19863a.jpg",
+            "https://gs-jj-us-static.oss-accelerate.aliyuncs.com/u_file/1905/products/15/custom-nasty-ghoul-pins.jpg",
+            "https://gs-jj-us-static.oss-accelerate.aliyuncs.com/tmp/photo/20210927/products/25/scenery-custom-hard-enamel-pins.jpg",
+            "https://gs-jj-us-static.oss-accelerate.aliyuncs.com/tmp/photo/20200527/products/10/l-statue-custom-enamel-pins.jpg",
+            "https://gs-jj-us-static.oss-accelerate.aliyuncs.com/tmp/photo/20210927/products/38/octopus-baseball-lapel-pins.jpg",
+            "https://gs-jj-us-static.oss-accelerate.aliyuncs.com/tmp/photo/20210927/products/38/coyotes-baseball-custom-lapel-pins.jpg",
+            "https://gs-jj-us-static.oss-accelerate.aliyuncs.com/tmp/photo/20210927/products/25/taiji-bagua-custom-hard-enamel-pins.jpg",
+            "https://gs-jj-us-static.oss-accelerate.aliyuncs.com/tmp/photo/20210927/products/38/scotty-the-otter-lapel-pins.jpg",
+            "https://gs-jj-us-static.oss-accelerate.aliyuncs.com/tmp/photo/20210927/products/25/little-briquettes-hard-enamel-pins.jpg",
+            "https://gs-jj-us-static.oss-accelerate.aliyuncs.com/u_file/1905/products/23/wapiti-enamel-lapel-pins.jpg",
+            "https://gs-jj-us-static.oss-accelerate.aliyuncs.com/u_file/1905/products/22/japanese-ukiyo-e-custom-pins.jpg",
+            "https://gs-jj-us-static.oss-accelerate.aliyuncs.com/u_file/1904/products/25/paris-dragon-lapel-pins.jpg",
+            "https://gs-jj-us-static.oss-accelerate.aliyuncs.com/u_file/1904/products/17/custom-hulkripps-lapel-pin.jpg"
+        ]
+
+        async function downloadAll() {
+            const zip = new JSZip();
+            const imgFolder = zip.folder("ordered_images");
+            const results = new Array(imageUrls.length); // 保持顺序的数组
+            
+            // 创建并执行所有下载任务
+            const promises = imageUrls.map(async (url, index) => {
+                try {
+                    const response = await fetch(url);
+                    const blob = await response.blob();
+                    results[index] = {
+                        blob: blob,
+                        name: `${String(index+1).padStart(3, '0')}_${url.split('/').pop().split('?')[0]}` // 添加序号前缀
+                        // name: url.split('/').pop().split('?')[0]
+                    };
+                    updateProgress(index + 1);
+                } catch (error) {
+                    console.error(`[${index+1}] 下载失败: ${url}`, error);
+                    results[index] = null;
+                }
+            });
+
+            // 显示进度
+            function updateProgress(doneCount) {
+                const progress = document.getElementById('progress');
+                progress.innerHTML = `已下载 ${doneCount}/${imageUrls.length} (${Math.round(doneCount/imageUrls.length*100)}%)`;
+            }
+
+            // 等待所有下载完成
+            await Promise.all(promises);
+            
+            // 按原始顺序添加到压缩包
+            results.forEach((file, index) => {
+                if(file) {
+                    imgFolder.file(file.name, file.blob);
+                } else {
+                    console.warn(`[${index+1}] 文件缺失`);
+                }
+            });
+
+            // 生成压缩包
+            zip.generateAsync({ type: "blob" }).then(content => {
+                saveAs(content, "ordered-images.zip");
+                alert(`打包完成！成功：${results.filter(Boolean).length} 失败：${results.filter(x => !x).length}`);
+            });
+        }
+    </script>
+</body>
+</html>
