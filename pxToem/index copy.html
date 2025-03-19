@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PX转REM/EM工具</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.7.16"></script>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/element-ui/lib/theme-chalk/index.css"
+    />
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+    <style>
+      .container {
+        max-width: 600px;
+        margin: 20px auto;
+        padding: 20px;
+      }
+      .result {
+        font-family: monospace;
+        color: #67c23a;
+        padding: 10px;
+        background: #f5f5f5;
+        border-radius: 4px;
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <el-card class="container">
+        <div slot="header">
+          <span>PX转REM/EM计算工具</span>
+        </div>
+        <el-form label-width="120px">
+          <!-- 输入像素值 -->
+          <el-form-item label="输入像素值(px)">
+            <el-input
+              v-model.number="pxValue"
+              type="number"
+              placeholder="请输入要转换的像素值"
+              step="any"
+            ></el-input>
+          </el-form-item>
+
+          <!-- 根字体大小 -->
+          <el-form-item label="根字体大小(px)">
+            <el-input
+              v-model.number="rootFontSize"
+              type="number"
+              step="any"
+              placeholder="请输入基准字体大小"
+            ></el-input>
+          </el-form-item>
+
+          <!-- 转换类型选择 -->
+          <el-form-item label="转换类型">
+            <el-select v-model="convertType">
+              <el-option label="REM" value="rem"></el-option>
+              <el-option label="EM" value="em"></el-option>
+            </el-select>
+          </el-form-item>
+
+          <!-- 显示结果 -->
+          <el-form-item label="转换结果">
+            <div class="result">{{ result || '等待输入...' }}</div>
+          </el-form-item>
+        </el-form>
+      </el-card>
+    </div>
+
+    <script>
+      new Vue({
+        el: "#app",
+        data() {
+          return {
+            pxValue: null,
+            rootFontSize: 16,
+            convertType: "rem",
+          };
+        },
+        computed: {
+          result() {
+            // 输入验证
+            if (isNaN(this.pxValue)) return "请输入有效的像素值";
+            if (isNaN(this.rootFontSize)) return "请输入有效的字体大小";
+            if (this.rootFontSize <= 0) return "字体大小必须大于0";
+            if (this.pxValue <= 0) return "像素值必须大于0";
+
+            // 计算基础值
+            const px = parseFloat(this.pxValue);
+            const root = parseFloat(this.rootFontSize);
+            const ratio = px / root;
+            const integerPart = Math.floor(ratio);
+            const remainder = px % root;
+
+            // 格式化余数（保留两位小数）
+            const format = (value) => {
+              if (value % 1 === 0) return value.toFixed(0);
+              const formatted = value.toFixed(2);
+              return formatted.replace(/\.?0+$/, "");
+            };
+
+            // 返回计算结果
+            if (ratio === integerPart) {
+              return `${integerPart}${this.convertType}`;
+            } else {
+              return `calc(${integerPart}${this.convertType} + ${format(
+                remainder
+              )}px)`;
+            }
+          },
+        },
+      });
+    </script>
+  </body>
+</html>

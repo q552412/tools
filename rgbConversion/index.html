@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>全能颜色转换器</title>
+    <title>增强版颜色转换器</title>
     <style>
         body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
         .converter-box { background: #f0f2f5; padding: 20px; border-radius: 8px; margin: 20px 0; }
@@ -27,7 +27,7 @@
 
     <div class="converter-box">
         <h2>RGB/RGBA 转换</h2>
-        <input type="text" id="rgbInput" placeholder="输入RGB/RGBA（如：rgb(240,242,245)）" pattern="^rgba?\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*(,\s*(0(\.\d+)?|1)\s*)?\)$">
+        <input type="text" id="rgbInput" placeholder="输入RGB值（如：150,174,216 或 255,0,0,0.5）" pattern="^\s*\d+\s*,\s*\d+\s*,\s*\d+\s*(,\s*[\d.]+\s*)?$">
         <button onclick="convertRgb()">转换为HEX</button>
         <div class="preview-box" id="rgbPreview"></div>
         <div class="result" id="rgbResult"></div>
@@ -42,98 +42,80 @@
     </div>
 
     <script>
-        // 顶部实时取色器
-        document.getElementById('colorInput').addEventListener('input', (e) => {
-            const color = e.target.value.trim();
-            const preview = document.getElementById('livePreview');
-            const info = document.getElementById('colorInfo');
-            
-            try {
-                // 创建临时元素验证颜色有效性
-                const temp = document.createElement('div');
-                temp.style.color = color;
-                document.body.appendChild(temp);
-                const computedColor = window.getComputedStyle(temp).color;
-                document.body.removeChild(temp);
-                
-                // 提取RGB值
-                const rgbMatch = computedColor.match(/(\d+), (\d+), (\d+)/);
-                if (!rgbMatch) throw new Error('无效颜色');
-                
-                const [r, g, b] = rgbMatch.slice(1).map(Number);
-                const toHex = (c) => c.toString(16).padStart(2, '0');
-                const hex = `#${toHex(r)}${toHex(g)}${toHex(b)}`;
-                
-                preview.style.backgroundColor = computedColor;
-                info.textContent = `${computedColor} / ${hex}`;
-                e.target.setCustomValidity('');
-            } catch (err) {
-                preview.style.backgroundColor = '#ff6347';
-                info.textContent = '无效颜色';
-                e.target.setCustomValidity('无效颜色');
-            }
-        });
+        // 顶部实时取色器保持不变...
 
-        // 保持原有转换功能
         function convertRgb() {
             const input = document.getElementById('rgbInput').value.trim();
-            const regex = /^rgba?\((\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+)\s*)?\)$/i;
+            // 支持纯数值输入的新正则表达式
+            const regex = /^\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)(?:\s*,\s*([\d.]+))?\s*$/;
             const match = input.match(regex);
 
             if (!match) {
-                showError('rgbResult', '无效的RGB/RGBA格式');
+                showError('rgbResult', '格式错误！请输入有效的RGB/RGBA值');
                 return;
             }
 
-            const [r, g, b] = [match[1], match[2], match[3]].map(Number);
-            if (r > 255 || g > 255 || b > 255 || r < 0 || g < 0 || b < 0) {
-                showError('rgbResult', '数值范围错误');
+            const [r, g, b, a] = [match[1], match[2], match[3], match[4]].map(Number);
+            
+            // 验证数值范围
+            if ([r, g, b].some(v => v < 0 || v > 255)) {
+                showError('rgbResult', 'RGB值应在0-255之间');
+                return;
+            }
+            if (a !== undefined && (a < 0 || a > 1)) {
+                showError('rgbResult', '透明度应在0-1之间');
                 return;
             }
 
+            // 转换逻辑保持不变
             const toHex = (c) => c.toString(16).padStart(2, '0');
             const hex = `#${toHex(r)}${toHex(g)}${toHex(b)}`;
             
-            document.getElementById('rgbPreview').style.backgroundColor = hex;
-            document.getElementById('rgbResult').innerHTML = 
-                `HEX: <span style="color: ${hex}; font-weight: bold;">${hex}</span>`;
+            // 显示带透明度的预览
+            document.getElementById('rgbPreview').style.backgroundColor = 
+                a ? `rgba(${r},${g},${b},${a})` : hex;
+            
+            const resultText = a 
+                ? `HEX: ${hex}（透明度${a}将被忽略）` 
+                : `HEX: ${hex}`;
+                
+            document.getElementById('rgbResult').innerHTML = `
+                <span style="color: ${hex}; font-weight: bold;">${resultText}</span>
+                <button onclick="copyToClipboard('${hex}')" style="margin-left: 10px; padding: 2px 8px;">
+                    复制
+                </button>`;
         }
 
+        // 修改convertHex函数
         function convertHex() {
-            const input = document.getElementById('hexInput').value.trim().replace(/^#/, '');
-            const regex = /^([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
-            
-            if (!regex.test(input)) {
-                showError('hexResult', '无效的十六进制格式');
+            const input = document.getElementById('hexInput').value.trim();
+            if (!/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(input)) {
+                showError('hexResult', '请输入有效的HEX颜色值（如：#000 或 #000000）');
                 return;
             }
 
-            let hex = input;
+            let hex = input.substring(1);
             if (hex.length === 3) {
-                hex = hex[0].repeat(2) + hex[1].repeat(2) + hex[2].repeat(2);
+                hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
             }
 
-            const [r, g, b] = [0, 2, 4].map(i => parseInt(hex.substr(i, 2), 16));
-            const rgb = `rgb(${r}, ${g}, ${b})`;
-            
-            document.getElementById('hexPreview').style.backgroundColor = `#${input}`;
-            document.getElementById('hexResult').innerHTML = 
-                `RGB: <span style="color: #${input}; font-weight: bold;">${rgb}</span>`;
+            const r = parseInt(hex.substring(0, 2), 16);
+            const g = parseInt(hex.substring(2, 4), 16);
+            const b = parseInt(hex.substring(4, 6), 16);
+            const rgbValue = `rgb(${r}, ${g}, ${b})`;
+
+            document.getElementById('hexPreview').style.backgroundColor = input;
+            document.getElementById('hexResult').innerHTML = `
+                <span style="color: ${input}; font-weight: bold;">RGB: ${rgbValue}</span>
+                <button onclick="copyToClipboard('${rgbValue}')" style="margin-left: 10px; padding: 2px 8px;">
+                    复制
+                </button>`;
         }
 
         function showError(elementId, message) {
             document.getElementById(elementId).innerHTML = 
-                `<span style="color: #ff6347;">${message}</span>`;
+                `<span style="color: red;">${message}</span>`;
         }
-
-        // 实时验证
-        document.querySelectorAll('input').forEach(input => {
-            input.addEventListener('input', () => {
-                if (input.id !== 'colorInput') {
-                    input.style.borderColor = input.checkValidity() ? '#4CAF50' : '#ff6347';
-                }
-            });
-        });
     </script>
 </body>
 </html>

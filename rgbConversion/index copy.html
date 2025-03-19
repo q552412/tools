@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>颜色转换工具</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; }
+        .container { background: #f0f2f5; padding: 20px; border-radius: 8px; }
+        input { width: 100%; padding: 8px; margin: 10px 0; }
+        button { padding: 10px 20px; background: #4CAF50; color: white; border: none; cursor: pointer; }
+        #result { margin-top: 20px; font-size: 1.2em; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>RGB/RGBA 转十六进制</h2>
+        <input type="text" id="rgbInput" placeholder="输入RGB/RGBA值（如：rgb(240,242,245)）">
+        <button onclick="convert()">转换</button>
+        <div id="result"></div>
+    </div>
+
+    <div class="container">
+        <h2>十六进制转RGB</h2>
+        <input type="text" id="hexInput" placeholder="输入十六进制值（如：#000000 或 #000）">
+        <button onclick="convert2()">转换</button>
+        <div id="result2"></div>
+    </div>
+
+    <script>
+
+        function convert() {
+            const input = document.getElementById('rgbInput').value.trim();
+            const regex = /^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*[\d.]+)?\)$/i;
+            const match = input.match(regex);
+            
+            if (!match) {
+                document.getElementById('result').innerHTML = '格式错误！请输入有效的RGB/RGBA值';
+                return;
+            }
+
+            const r = parseInt(match[1]);
+            const g = parseInt(match[2]);
+            const b = parseInt(match[3]);
+
+            if (r > 255 || g > 255 || b > 255 || r < 0 || g < 0 || b < 0) {
+                document.getElementById('result').innerHTML = '数值范围错误！RGB值应在0-255之间';
+                return;
+            }
+
+            const toHex = (c) => c.toString(16).padStart(2, '0');
+            const hex = `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+            
+            document.getElementById('result').innerHTML = 
+                `十六进制值：<span style="color: ${hex}; font-weight: bold;">${hex}</span>`;
+        }
+
+        function convert2() {
+            const input = document.getElementById('hexInput').value.trim().replace(/^#/, '');
+            const regex = /^([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
+            
+            if (!regex.test(input)) {
+                document.getElementById('result').innerHTML = '格式错误！请输入有效的十六进制值';
+                return;
+            }
+
+            let hex = input;
+            if (hex.length === 3) {
+                hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+            }
+
+            const r = parseInt(hex.substring(0,2), 16);
+            const g = parseInt(hex.substring(2,4), 16);
+            const b = parseInt(hex.substring(4,6), 16);
+
+            document.getElementById('result2').innerHTML = 
+                `RGB值：<span style="color: #${input}; font-weight: bold;">rgb(${r}, ${g}, ${b})</span>`;
+        }
+    </script>
+</body>
+</html>

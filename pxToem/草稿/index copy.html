@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title></title>
+    <!-- 要先引入vue.js 否则报错 -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.7.16"></script>
+    <!-- 引入样式 -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/element-ui/lib/theme-chalk/index.css"
+    />
+    <!-- 引入组件库 -->
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+    <style>
+      .container {
+        max-width: 600px;
+        margin: 20px auto;
+        padding: 20px;
+      }
+      .result {
+        font-family: monospace;
+        color: #67c23a;
+        padding: 10px;
+        background: #f5f5f5;
+        border-radius: 4px;
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <el-card class="container">
+        <div slot="header">
+          <span>PX转REM/EM计算工具</span>
+        </div>
+        <el-form label-width="120px">
+          <!-- 输入像素值 -->
+          <el-form-item label="输入像素值(px)">
+            <el-input
+              v-model.number="pxValue"
+              type="number"
+              placeholder="请输入要转换的像素值"
+              step="any"
+            ></el-input>
+          </el-form-item>
+
+          <!-- 根字体大小 -->
+          <el-form-item label="根字体大小(px)">
+            <el-input
+              v-model.number="rootFontSize"
+              type="number"
+              step="any"
+              placeholder="请输入基准字体大小"
+            ></el-input>
+          </el-form-item>
+
+          <!-- 转换类型选择 -->
+          <el-form-item label="转换类型">
+            <el-select v-model="convertType">
+              <el-option label="REM" value="rem"></el-option>
+              <el-option label="EM" value="em"></el-option>
+            </el-select>
+          </el-form-item>
+
+          <!-- 显示结果 -->
+          <el-form-item label="转换结果">
+            <div class="result">{{ result || '等待输入...' }}</div>
+          </el-form-item>
+        </el-form>
+      </el-card>
+    </div>
+
+    <script>
+      const vm = new Vue({
+        el: "#app",
+        data() {
+          return {
+            pxValue: null,
+            rootFontSize: 16,
+            convertType: "rem",
+          };
+        },
+        methods: {
+          // 是否无限循环小数
+          canBeFiniteDecimal(numerator, denominator) {
+            // 检查分母是否为 0
+            if (denominator === 0) {
+              throw new Error("Denominator cannot be zero.");
+            }
+
+            // 约分：计算分子和分母的最大公约数 (GCD)
+            function gcd(a, b) {
+              while (b !== 0) {
+                [a, b] = [b, a % b];
+              }
+              return a;
+            }
+
+            const greatestCommonDivisor = gcd(numerator, denominator);
+            numerator /= greatestCommonDivisor;
+            denominator /= greatestCommonDivisor;
+
+            // 检查分母是否只包含质因数 2 和 5
+            while (denominator % 2 === 0) {
+              denominator /= 2;
+            }
+            while (denominator % 5 === 0) {
+              denominator /= 5;
+            }
+
+            // 如果最终分母为 1，则说明只包含质因数 2 和 5
+            return denominator === 1;
+          },
+        },
+        computed: {
+          result() {
+            // 输入验证
+            if (isNaN(this.pxValue)) return "请输入有效的像素值";
+            if (isNaN(this.rootFontSize)) return "请输入有效的字体大小";
+            if (this.rootFontSize <= 0) return "字体大小必须大于0";
+            if (this.pxValue <= 0) return "像素值必须大于0";
+
+            // 计算基础值
+            const px = parseFloat(this.pxValue);
+            const root = parseFloat(this.rootFontSize);
+            const ratio = px / root;
+            const integerPart = Math.floor(ratio);
+            const remainder = px % root;
+            const isNotCalc = this.canBeFiniteDecimal(px , root);
+
+
+            // 格式化余数（保留两位小数）
+            const format = (value) => {
+              if (value % 1 === 0) return value.toFixed(0);
+              if (value % 1 === 0) return value;
+              const formatted = value.toFixed(2);
+              return formatted.replace(/\.?0+$/, "");
+            };
+
+            // 返回计算结果
+            // if (ratio === integerPart) {
+            if (isNotCalc) {
+              return `${ratio}${this.convertType}`;
+            } else {
+              return `calc(${integerPart}${this.convertType} + ${format(
+                remainder
+              )}px)`;
+            }
+          },
+        },
+      });
+    </script>
+  </body>
+</html>
