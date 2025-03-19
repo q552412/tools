@@ -38,6 +38,16 @@
       .el-form-item__label{
         color: #fff !important;
       }
+       /* 在原有样式基础上添加 */
+       .result-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .copy-btn {
+        margin-left: 10px;
+        flex-shrink: 0;
+      }
     </style>
   </head>
   <body>
@@ -77,8 +87,19 @@
 
           <!-- 显示结果 -->
           <el-form-item label="转换结果">
-            <div class="result">{{ result || '等待输入...' }}</div>
+            <div class="result-container">
+              <div class="result">{{ result || '等待输入...' }}</div>
+              <el-button 
+                v-if="result && !result.includes('请输入')"
+                class="copy-btn" 
+                size="mini" 
+                @click="copyResult"
+              >
+                复制
+              </el-button>
+            </div>
           </el-form-item>
+
         </el-form>
       </el-card>
     </div>
@@ -94,6 +115,34 @@
           };
         },
         methods: {
+          // 新增复制方法
+          copyResult() {
+            const resultText = this.result;
+            
+            // 创建临时textarea
+            const textarea = document.createElement('textarea');
+            textarea.value = resultText;
+            textarea.setAttribute('readonly', '');
+            textarea.style.position = 'absolute';
+            textarea.style.left = '-9999px';
+            document.body.appendChild(textarea);
+            
+            // 选择并复制
+            textarea.select();
+            try {
+              const successful = document.execCommand('copy');
+              if(successful) {
+                this.$message.success('复制成功！');
+              } else {
+                this.$message.error('复制失败，请手动选择复制');
+              }
+            } catch (err) {
+              this.$message.error('复制操作不被支持');
+            }
+            
+            // 清理临时元素
+            document.body.removeChild(textarea);
+          },
           canBeFiniteDecimal(numerator, denominator) {
             if (denominator === 0) return false;
             const gcd = (a, b) => (b === 0 ? a : gcd(b, a % b));
