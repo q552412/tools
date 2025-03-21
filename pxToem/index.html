@@ -4,42 +4,41 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-    <title></title>
-    <!-- 要先引入vue.js 否则报错 -->
+    <title>单位转换工具</title>
     <script src="https://cdn.jsdelivr.net/npm/vue@2.7.16"></script>
-    <!-- 引入样式 -->
-    <link
-      rel="stylesheet"
-      href="https://unpkg.com/element-ui/lib/theme-chalk/index.css"
-    />
-    <!-- 引入组件库 -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css" />
     <script src="https://unpkg.com/element-ui/lib/index.js"></script>
     <style>
-      body{
-        background:#292A2D;
+      body {
+        background: #292A2D;
         color: #fff;
+        margin: 0;
+      }
+      .main-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 20px;
+        max-width: 1200px;
+        margin: 20px auto;
+        padding: 0 20px;
       }
       .container {
-        max-width: 600px;
-        margin: 20px auto;
-        padding: 20px;
-        box-sizing: border-box;
+        background: #292A2D;
+        color: #fff !important;
+        margin: 0;
+      }
+      .el-card__header {
+        border-bottom: 1px solid #3A3B3E;
+      }
+      .el-form-item__label {
+        color: #fff !important;
       }
       .result {
         font-family: monospace;
         color: #67c23a;
-        /* background: #f5f5f5; */
-        border-radius: 4px;
+        word-break: break-all;
       }
-      .el-card {
-        background:#292A2D;
-        color: #fff !important;
-      }
-      .el-form-item__label{
-        color: #fff !important;
-      }
-       /* 在原有样式基础上添加 */
-       .result-container {
+      .result-container {
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -48,151 +47,199 @@
         margin-left: 10px;
         flex-shrink: 0;
       }
+      .el-input__inner,
+      .el-select .el-input__inner {
+        background: #1B1C1E !important;
+        border-color: #3A3B3E !important;
+        color: #fff !important;
+      }
     </style>
   </head>
   <body>
     <div id="app">
-      <el-card class="container">
-        <div slot="header">
-          <span>PX转REM/EM计算工具</span>
-        </div>
-        <el-form label-width="120px">
-          <!-- 输入像素值 -->
-          <el-form-item label="输入像素值(px)">
-            <el-input
-              v-model.number="pxValue"
-              type="number"
-              placeholder="请输入要转换的像素值"
-              step="any"
-            ></el-input>
-          </el-form-item>
+      <div class="main-container">
+        <!-- PX转REM/EM卡片 -->
+        <el-card class="container">
+          <div slot="header">
+            <span>PX转REM/EM计算工具</span>
+          </div>
+          <el-form label-width="120px">
+            <el-form-item label="输入像素值(px)">
+              <el-input
+                v-model.number="pxValue"
+                type="number"
+                placeholder="请输入要转换的像素值"
+                step="any"
+              ></el-input>
+            </el-form-item>
 
-          <!-- 根字体大小 -->
-          <el-form-item label="根字体大小(px)">
-            <el-input
-              v-model.number="rootFontSize"
-              type="number"
-              step="any"
-              placeholder="请输入基准字体大小"
-            ></el-input>
-          </el-form-item>
+            <el-form-item label="根字体大小(px)">
+              <el-input
+                v-model.number="rootFontSize"
+                type="number"
+                step="any"
+                placeholder="请输入基准字体大小"
+              ></el-input>
+            </el-form-item>
 
-          <!-- 转换类型选择 -->
-          <el-form-item label="转换类型">
-            <el-select v-model="convertType">
-              <el-option label="REM" value="rem"></el-option>
-              <el-option label="EM" value="em"></el-option>
-            </el-select>
-          </el-form-item>
+            <el-form-item label="转换类型">
+              <el-select v-model="convertType">
+                <el-option label="REM" value="rem"></el-option>
+                <el-option label="EM" value="em"></el-option>
+              </el-select>
+            </el-form-item>
 
-          <!-- 显示结果 -->
-          <el-form-item label="转换结果">
-            <div class="result-container">
-              <div class="result">{{ result || '等待输入...' }}</div>
-              <el-button 
-                v-if="result && !result.includes('请输入')"
-                class="copy-btn" 
-                size="mini" 
-                @click="copyResult"
-              >
-                复制
-              </el-button>
-            </div>
-          </el-form-item>
+            <el-form-item label="转换结果">
+              <div class="result-container">
+                <div class="result">{{ remResult || '等待输入...' }}</div>
+                <el-button 
+                  v-if="remResult && !remResult.includes('请输入')"
+                  class="copy-btn" 
+                  size="mini" 
+                  @click="copyResult(remResult)"
+                >
+                  复制
+                </el-button>
+              </div>
+            </el-form-item>
+          </el-form>
+        </el-card>
 
-        </el-form>
-      </el-card>
+        <!-- PX转VW卡片 -->
+        <el-card class="container">
+          <div slot="header">
+            <span>PX转VW计算工具</span>
+          </div>
+          <el-form label-width="120px">
+            <el-form-item label="输入像素值(px)">
+              <el-input
+                v-model.number="pxValueVw"
+                type="number"
+                placeholder="请输入要转换的像素值"
+                step="any"
+              ></el-input>
+            </el-form-item>
+
+            <el-form-item label="视口宽度(px)">
+              <el-input
+                v-model.number="viewportWidth"
+                type="number"
+                step="any"
+                placeholder="请输入设计稿宽度"
+              ></el-input>
+            </el-form-item>
+
+            <el-form-item label="转换结果">
+              <div class="result-container">
+                <div class="result">{{ vwResult || '等待输入...' }}</div>
+                <el-button 
+                  v-if="vwResult && !vwResult.includes('请输入')"
+                  class="copy-btn" 
+                  size="mini" 
+                  @click="copyResult(vwResult)"
+                >
+                  复制
+                </el-button>
+              </div>
+            </el-form-item>
+          </el-form>
+        </el-card>
+      </div>
     </div>
 
     <script>
-      const vm = new Vue({
-        el: "#app",
+      new Vue({
+        el: '#app',
         data() {
           return {
+            // REM/EM相关数据
             pxValue: null,
             rootFontSize: 16,
-            convertType: "em",
-          };
-        },
-        methods: {
-          // 新增复制方法
-          copyResult() {
-            const resultText = this.result;
+            convertType: 'rem',
             
-            // 创建临时textarea
-            const textarea = document.createElement('textarea');
-            textarea.value = resultText;
-            textarea.setAttribute('readonly', '');
-            textarea.style.position = 'absolute';
-            textarea.style.left = '-9999px';
-            document.body.appendChild(textarea);
-            
-            // 选择并复制
-            textarea.select();
-            try {
-              const successful = document.execCommand('copy');
-              if(successful) {
-                this.$message.success('复制成功！');
-              } else {
-                this.$message.error('复制失败，请手动选择复制');
-              }
-            } catch (err) {
-              this.$message.error('复制操作不被支持');
-            }
-            
-            // 清理临时元素
-            document.body.removeChild(textarea);
-          },
-          canBeFiniteDecimal(numerator, denominator) {
-            if (denominator === 0) return false;
-            const gcd = (a, b) => (b === 0 ? a : gcd(b, a % b));
-            const divisor = gcd(numerator, denominator);
-            let reducedDenominator = denominator / divisor;
-            while (reducedDenominator % 2 === 0) reducedDenominator /= 2;
-            while (reducedDenominator % 5 === 0) reducedDenominator /= 5;
-            return reducedDenominator === 1;
-          },
-          findOptimalK(px, root) {
-            let k = Math.min(Math.floor(px), px);
-            while (k >= 0) {
-              if (this.canBeFiniteDecimal(k, root)) return k;
-              k--;
-            }
-            return 0;
-          },
-          formatDecimal(value) {
-            return value % 1 === 0 ? value.toString() : value.toFixed(2).replace(/\.?0+$/, '');
+            // VW相关数据
+            pxValueVw: null,
+            viewportWidth: 1920
           }
         },
         computed: {
-          result() {
-            if (isNaN(this.pxValue)) return "请输入有效的像素值";
-            if (isNaN(this.rootFontSize)) return "请输入有效的字体大小";
-            if (this.rootFontSize <= 0) return "字体大小必须大于0";
-            if (this.pxValue <= 0) return "像素值必须大于0";
-    
-            const px = parseFloat(this.pxValue);
-            const root = parseFloat(this.rootFontSize);
-            const ratio = px / root;
-    
+          remResult() {
+            if (isNaN(this.pxValue)) return "请输入有效的像素值"
+            if (isNaN(this.rootFontSize)) return "请输入有效的字体大小"
+            if (this.rootFontSize <= 0) return "字体大小必须大于0"
+            if (this.pxValue <= 0) return "像素值必须大于0"
+
+            const px = parseFloat(this.pxValue)
+            const root = parseFloat(this.rootFontSize)
+            const ratio = px / root
+
             if (this.canBeFiniteDecimal(px, root)) {
-              return `${ratio}${this.convertType}`;
+              return `${ratio}${this.convertType}`
             } else {
-              const optimalK = this.findOptimalK(px, root);
-              const optimalRem = optimalK / root;
-              const remainder = px - optimalK;
-    
+              const optimalK = this.findOptimalK(px, root)
+              const optimalRem = optimalK / root
+              const remainder = px - optimalK
+
               if (optimalK > 0 && remainder >= 0) {
-                return `calc(${this.formatDecimal(optimalRem)}${this.convertType} + ${this.formatDecimal(remainder)}px)`;
+                return `calc(${this.formatDecimal(optimalRem)}${this.convertType} + ${this.formatDecimal(remainder)}px)`
               } else {
-                const integerPart = Math.floor(ratio);
-                const remainderOriginal = px % root;
-                return `calc(${integerPart}${this.convertType} + ${this.formatDecimal(remainderOriginal)}px)`;
+                const integerPart = Math.floor(ratio)
+                const remainderOriginal = px % root
+                return `calc(${integerPart}${this.convertType} + ${this.formatDecimal(remainderOriginal)}px)`
               }
             }
+          },
+          vwResult() {
+            if (isNaN(this.pxValueVw)) return "请输入有效的像素值"
+            if (isNaN(this.viewportWidth)) return "请输入有效的视口宽度"
+            if (this.viewportWidth <= 0) return "视口宽度必须大于0"
+            if (this.pxValueVw <= 0) return "像素值必须大于0"
+
+            const vw = (this.pxValueVw / this.viewportWidth) * 100
+            return `${this.formatDecimal(vw)}vw`
           }
         },
-      });
+        methods: {
+          copyResult(text) {
+            const textarea = document.createElement('textarea')
+            textarea.value = text
+            textarea.setAttribute('readonly', '')
+            textarea.style.position = 'absolute'
+            textarea.style.left = '-9999px'
+            document.body.appendChild(textarea)
+            
+            textarea.select()
+            try {
+              document.execCommand('copy')
+              this.$message.success('复制成功！')
+            } catch (err) {
+              this.$message.error('复制失败，请手动复制')
+            }
+            document.body.removeChild(textarea)
+          },
+          canBeFiniteDecimal(numerator, denominator) {
+            const gcd = (a, b) => (b === 0 ? a : gcd(b, a % b))
+            const divisor = gcd(numerator, denominator)
+            let reducedDenominator = denominator / divisor
+            
+            while (reducedDenominator % 2 === 0) reducedDenominator /= 2
+            while (reducedDenominator % 5 === 0) reducedDenominator /= 5
+            return reducedDenominator === 1
+          },
+          findOptimalK(px, root) {
+            let k = Math.min(Math.floor(px), px)
+            while (k >= 0) {
+              if (this.canBeFiniteDecimal(k, root)) return k
+              k--
+            }
+            return 0
+          },
+          formatDecimal(value) {
+            const fixed = value.toFixed(4)
+            return fixed.replace(/\.?0+$/, '')
+          }
+        }
+      })
     </script>
   </body>
 </html>
