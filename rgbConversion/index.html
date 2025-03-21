@@ -95,8 +95,10 @@
             const hex = `#${toHex(r)}${toHex(g)}${toHex(b)}`;
             
             document.getElementById('rgbPreview').style.backgroundColor = hex;
-            document.getElementById('rgbResult').innerHTML = 
-                `HEX: <span style="color: ${hex}; font-weight: bold;">${hex}</span>`;
+            document.getElementById('rgbResult').innerHTML =  
+                //注释掉文字颜色 有些会跟背景色类似 导致看不出文字
+                // `HEX: <span style="color: ${hex}; font-weight: bold;">${hex}</span>`;
+                `HEX: <span style="font-weight: bold;">${hex}</span> 预览:<span style="color: ${hex}; font-size:42px;font-weight: bold;">■</span>`;
         }
 
         function convertHex() {
