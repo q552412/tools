@@ -91,16 +91,30 @@
 
             <el-form-item label="转换结果">
               <div class="result-container">
-                <div class="result">{{ remResult || '等待输入...' }}</div>
+                <div class="result">{{ remResults.calc || '等待输入...' }}</div>
                 <el-button 
-                  v-if="remResult && !remResult.includes('请输入')"
+                  v-if="remResults.calc && !remResults.calc.includes('请输入')"
                   class="copy-btn" 
                   size="mini" 
-                  @click="copyResult(remResult)"
+                  @click="copyResult(remResults.calc)"
                 >
                   复制
                 </el-button>
               </div>
+              <!-- 新增小数结果显示 -->
+              <div v-if="remResults.decimal" class="result-container" style="margin-top: 8px;">
+                <div class="result">{{ remResults.decimal }}</div>
+                <el-button 
+                  class="copy-btn" 
+                  size="mini" 
+                  @click="copyResult(Number(remResults.decimal.split(convertType)[0]).toFixed(3)+convertType)"
+                >
+                  复制
+                </el-button>
+              </div>
+            </el-form-item>
+          </el-form>
+
             </el-form-item>
           </el-form>
         </el-card>
@@ -163,31 +177,44 @@
           }
         },
         computed: {
-          remResult() {
-            if (isNaN(this.pxValue)) return "请输入有效的像素值"
-            if (isNaN(this.rootFontSize)) return "请输入有效的字体大小"
-            if (this.rootFontSize <= 0) return "字体大小必须大于0"
-            if (this.pxValue <= 0) return "像素值必须大于0"
+          remResults() {
+            // 输入验证
+            if (isNaN(this.pxValue)) return { calc: "请输入有效的像素值", decimal: null };
+            if (isNaN(this.rootFontSize)) return { calc: "请输入有效的字体大小", decimal: null };
+            if (this.rootFontSize <= 0) return { calc: "字体大小必须大于0", decimal: null };
+            if (this.pxValue <= 0) return { calc: "像素值必须大于0", decimal: null };
 
-            const px = parseFloat(this.pxValue)
-            const root = parseFloat(this.rootFontSize)
-            const ratio = px / root
+            const px = parseFloat(this.pxValue);
+            const root = parseFloat(this.rootFontSize);
+            const ratio = px / root;
 
+            // 判断是否可整除
             if (this.canBeFiniteDecimal(px, root)) {
-              return `${ratio}${this.convertType}`
-            } else {
-              const optimalK = this.findOptimalK(px, root)
-              const optimalRem = optimalK / root
-              const remainder = px - optimalK
-
-              if (optimalK > 0 && remainder >= 0) {
-                return `calc(${this.formatDecimal(optimalRem)}${this.convertType} + ${this.formatDecimal(remainder)}px)`
-              } else {
-                const integerPart = Math.floor(ratio)
-                const remainderOriginal = px % root
-                return `calc(${integerPart}${this.convertType} + ${this.formatDecimal(remainderOriginal)}px)`
-              }
+              return {
+                calc: `${this.formatDecimal(ratio)}${this.convertType}`,
+                decimal: null
+              };
             }
+
+            // 计算CALC表达式
+            let calcExpression;
+            const optimalK = this.findOptimalK(px, root);
+            const optimalRem = optimalK / root;
+            const remainder = px - optimalK;
+
+            if (optimalK > 0 && remainder >= 0) {
+              calcExpression = `calc(${this.formatDecimal(optimalRem)}${this.convertType} + ${this.formatDecimal(remainder)}px)`;
+            } else {
+              const integerPart = Math.floor(ratio);
+              const remainderOriginal = px % root;
+              calcExpression = `calc(${integerPart}${this.convertType} + ${this.formatDecimal(remainderOriginal)}px)`;
+            }
+
+            return {
+              calc: calcExpression,
+              // decimal: `${ratio.toFixed(6)}${this.convertType}` // 生成六位小数结果
+              decimal: `${ratio}${this.convertType}`
+            };
           },
           vwResult() {
             if (isNaN(this.pxValueVw)) return "请输入有效的像素值"
