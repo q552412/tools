@@ -47,6 +47,7 @@
     </button>
     <div id="reader"></div>
     <h3 id="qr-reader-results"></h3>
+    <button id="toggleTorch">Toggle Torch</button>
     <script>
         //方式一使用库的ui
         // var resultContainer = document.getElementById('qr-reader-results');
@@ -73,7 +74,32 @@
         let reader = document.getElementById("reader");
         let res = document.getElementById('qr-reader-results');
         let uploadInput = document.getElementById('upload-input');
-        let config = { fps: 10, qrbox: { width: 300, height: 280 } }; //扫一扫相关设置
+        let config = { 
+            fps: 10, 
+            qrbox: { width: 300, height: 280, 
+            videoConstraints: {
+                    facingMode: "environment", // 使用后置摄像头
+                    advanced: [{ torch: true }]
+                } 
+            } 
+        }; //扫一扫相关设置
+        let torchEnabled = false;
+
+        
+        // 切换手电筒
+        document.getElementById("toggleTorch").addEventListener("click", async () => {
+        if (!mediaStreamTrack) return;
+        
+        torchEnabled = !torchEnabled;
+        try {
+            await mediaStreamTrack.applyConstraints({
+            advanced: [{ torch: torchEnabled }]
+            });
+            console.log("手电筒状态:", torchEnabled ? "开启" : "关闭");
+        } catch (error) {
+            console.error("无法切换手电筒:", error);
+        }
+        });
 
         //使用本地文件
         function useLocal() {
