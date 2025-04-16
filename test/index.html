@@ -83,7 +83,9 @@
                 } 
             } 
         }; //扫一扫相关设置
+
         let torchEnabled = false;
+        let mediaStreamTrack;
 
 
         // 切换手电筒
@@ -177,7 +179,10 @@
                 config,
                 onScanSuccess,
                 onScanFailure
-            );
+            ).then(() => {
+                // 获取摄像头流
+              mediaStreamTrack = html5Qrcode.getRunningTrack();
+            });
         }
 
         //扫码解析成功后按照自己的需求做后续的操作
