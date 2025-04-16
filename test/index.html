@@ -152,6 +152,7 @@
         function onScanSuccess(decodedText, decodedResult) {
             res.innerText = "扫码成功结果:\n" + decodedText;
             reader.style.display = "none";
+            res.innerText = "";
         }
 
         //扫码解析失败后按照自己的需求做后续的操作
