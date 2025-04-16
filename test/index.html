@@ -85,20 +85,26 @@
         }; //扫一扫相关设置
         let torchEnabled = false;
 
-        
+
         // 切换手电筒
         document.getElementById("toggleTorch").addEventListener("click", async () => {
-        if (!mediaStreamTrack) return;
-        
-        torchEnabled = !torchEnabled;
-        try {
-            await mediaStreamTrack.applyConstraints({
-            advanced: [{ torch: torchEnabled }]
-            });
-            console.log("手电筒状态:", torchEnabled ? "开启" : "关闭");
-        } catch (error) {
-            console.error("无法切换手电筒:", error);
-        }
+            if (!mediaStreamTrack) return;
+            
+            torchEnabled = !torchEnabled;
+            try {
+                await mediaStreamTrack.applyConstraints({
+                advanced: [{ torch: torchEnabled }]
+                });
+                console.log("手电筒状态:", torchEnabled ? "开启" : "关闭");
+            } catch (error) {
+                console.error("无法切换手电筒:", error);
+            }
+        });
+
+        navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+            const track = stream.getVideoTracks()[0];
+            const capabilities = track.getCapabilities();
+            console.log("支持手电筒:", 'torch' in capabilities);
         });
 
         //使用本地文件
