@@ -5,6 +5,7 @@ uni_modules/
 unpackage/
 /logs
 /sftp
+_localTest/
 *.log
 *.lock
 .nuxt.zip
